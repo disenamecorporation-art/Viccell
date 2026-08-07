@@ -1,12 +1,28 @@
-import React, { useState } from 'react';
-import { Send, MapPin, CheckCircle, Package } from 'lucide-react';
-import { DispatchForm } from '../types';
+import React, { useState, useEffect } from 'react';
+import { Send, MapPin, CheckCircle, Package, ShoppingCart, Trash2, Truck, AlertCircle } from 'lucide-react';
+import { CartItem, DispatchForm, StoreMode, User } from '../types';
 
-export const ShippingSection: React.FC = () => {
+interface ShippingSectionProps {
+  cartItems?: CartItem[];
+  storeMode?: StoreMode;
+  currentUser?: User | null;
+  onUpdateQuantity?: (productId: string, delta: number) => void;
+  onRemoveItem?: (productId: string) => void;
+  onClearCart?: () => void;
+}
+
+export const ShippingSection: React.FC<ShippingSectionProps> = ({
+  cartItems = [],
+  storeMode = 'minorista',
+  currentUser,
+  onUpdateQuantity,
+  onRemoveItem,
+  onClearCart,
+}) => {
   const [form, setForm] = useState<DispatchForm>({
-    fullName: '',
+    fullName: currentUser?.name || '',
     idNumber: '',
-    email: '',
+    email: currentUser?.email || '',
     phone: '',
     agency: 'MRW',
     state: 'Aragua',
@@ -16,6 +32,18 @@ export const ShippingSection: React.FC = () => {
   });
 
   const [idUploaded, setIdUploaded] = useState(false);
+
+  useEffect(() => {
+    if (currentUser) {
+      setForm(prev => ({
+        ...prev,
+        fullName: prev.fullName || currentUser.name || '',
+        email: prev.email || currentUser.email || '',
+      }));
+    }
+  }, [currentUser]);
+
+  const totalUSD = cartItems.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
 
   const handleSimulatedFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -28,16 +56,38 @@ export const ShippingSection: React.FC = () => {
   const handleSendToWhatsApp = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const message = 
-      `📦 Datos de Despacho Viccell:\n` +
-      `👤 Nombre: ${form.fullName}\n` +
-      `🆔 Cédula/RIF: ${form.idNumber}\n` +
-      `📧 Correo: ${form.email}\n` +
-      `📱 Teléfono: ${form.phone}\n` +
+    let message = '';
+
+    if (cartItems.length > 0) {
+      message += `🛒 *PEDIDO Y REGISTRO DE DESPACHO - VICCELL (${storeMode.toUpperCase()})*\n`;
+      message += `─────────────────────────\n\n`;
+
+      message += `📋 *DETALLE DEL PEDIDO DE PRODUCTOS:*\n`;
+      cartItems.forEach((item, i) => {
+        message += `${i + 1}. *${item.product.title}*\n` +
+          `   • SKU: ${item.product.sku}\n` +
+          `   • Cantidad: ${item.quantity} uds\n` +
+          `   • P.Unit: $${item.unitPrice.toFixed(2)} | Subtotal: $${(item.unitPrice * item.quantity).toFixed(2)}\n\n`;
+      });
+
+      message += `💵 *TOTAL PRODUCTOS USD: $${totalUSD.toFixed(2)}*\n\n`;
+
+      message += `📦 *DATOS DE DESPACHO Y ENVÍO:*\n`;
+    } else {
+      message += `📦 *REGISTRO DE DESPACHO VICCELL*\n`;
+      message += `─────────────────────────\n\n`;
+    }
+
+    message += 
+      `👤 Nombre: ${form.fullName || 'No especificado'}\n` +
+      `🆔 Cédula/RIF: ${form.idNumber || 'No especificado'}\n` +
+      `📧 Correo: ${form.email || 'No especificado'}\n` +
+      `📱 Teléfono: ${form.phone || 'No especificado'}\n` +
       `🏢 Agencia: ${form.agency} (Cobro en Destino)\n` +
       `📍 Ubicación: ${form.state}, ${form.city}\n` +
-      `🏠 Dirección Agencia: ${form.agencyAddress}\n` +
-      `📄 Foto Cédula: ${idUploaded ? form.idPhotoName : 'Adjunto por chat'}`;
+      `🏠 Dirección Agencia: ${form.agencyAddress || 'No especificada'}\n` +
+      `📄 Foto Cédula: ${idUploaded ? form.idPhotoName : 'Adjunto por chat'}\n\n` +
+      `Hola Viccell, envío este registro para procesar la cotización e instrucciones de pago. Quedo atento.`;
 
     window.open(`https://wa.me/584128006426?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -46,7 +96,7 @@ export const ShippingSection: React.FC = () => {
     <section id="envios" className="py-16 bg-white text-slate-900 font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         
-        {/* Section Header with Montserrat Thin & Elegant Typography */}
+        {/* Section Header */}
         <div className="text-center space-y-3">
           <span className="inline-block px-4 py-1.5 rounded-full bg-[#20d8e2]/10 text-[#0c8f97] text-xs font-semibold tracking-widest uppercase">
             Logística Nacional Segura
@@ -59,7 +109,7 @@ export const ShippingSection: React.FC = () => {
           </p>
         </div>
 
-        {/* Shipping Agencies Cards with Exact Logos and Gentle Animations */}
+        {/* Shipping Agencies Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           
           {/* MRW Card */}
@@ -115,6 +165,109 @@ export const ShippingSection: React.FC = () => {
 
         </div>
 
+        {/* Floating/Prominent Order Summary Card (if cart has items) */}
+        {cartItems.length > 0 && (
+          <div className="max-w-3xl mx-auto bg-white text-slate-900 rounded-3xl p-6 sm:p-8 border-2 border-[#20d8e2]/40 shadow-xl relative overflow-hidden space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 flex-wrap gap-2">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-[#20d8e2]/15 border border-[#20d8e2]/30 rounded-2xl text-[#0c8f97]">
+                  <ShoppingCart className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+                    Pedido de Productos Adjunto
+                    <span className="bg-[#20d8e2]/20 text-[#0c8f97] text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full border border-[#20d8e2]/30">
+                      {storeMode}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-light">
+                    {cartItems.length} {cartItems.length === 1 ? 'producto' : 'productos'} listo(s) para incluir en tu registro de despacho
+                  </p>
+                </div>
+              </div>
+
+              {onClearCart && (
+                <button
+                  onClick={onClearCart}
+                  className="text-xs text-slate-400 hover:text-rose-500 underline font-medium cursor-pointer"
+                >
+                  Vaciar pedido
+                </button>
+              )}
+            </div>
+
+            {/* List of items */}
+            <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+              {cartItems.map((item) => {
+                const sub = item.unitPrice * item.quantity;
+                return (
+                  <div 
+                    key={item.product.id}
+                    className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-3 flex items-center gap-3 justify-between hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img 
+                        src={item.product.images[0]} 
+                        alt={item.product.title} 
+                        className="w-12 h-12 rounded-xl object-cover bg-white border border-slate-200 shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-900 truncate">{item.product.title}</p>
+                        <p className="text-[11px] text-slate-500 font-mono">SKU: {item.product.sku} | ${item.unitPrice.toFixed(2)} c/u</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      {/* Quantity Controls */}
+                      {onUpdateQuantity && (
+                        <div className="flex items-center bg-white rounded-lg border border-slate-200 p-0.5 text-xs shadow-sm">
+                          <button
+                            onClick={() => onUpdateQuantity(item.product.id, -1)}
+                            className="w-5 h-5 text-slate-500 hover:text-slate-900 flex items-center justify-center font-bold cursor-pointer"
+                          >
+                            -
+                          </button>
+                          <span className="w-6 text-center font-bold text-[#0c8f97]">{item.quantity}</span>
+                          <button
+                            onClick={() => onUpdateQuantity(item.product.id, 1)}
+                            className="w-5 h-5 text-slate-500 hover:text-slate-900 flex items-center justify-center font-bold cursor-pointer"
+                          >
+                            +
+                          </button>
+                        </div>
+                      )}
+
+                      <span className="text-xs font-black text-slate-900 min-w-[55px] text-right">
+                        ${sub.toFixed(2)}
+                      </span>
+
+                      {onRemoveItem && (
+                        <button
+                          onClick={() => onRemoveItem(item.product.id)}
+                          className="text-slate-400 hover:text-rose-500 p-1 cursor-pointer transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4 text-sm font-bold">
+              <span className="text-slate-600">Total de Productos:</span>
+              <span className="text-2xl font-black text-[#0c8f97]">${totalUSD.toFixed(2)}</span>
+            </div>
+
+            <div className="bg-[#20d8e2]/10 border border-[#20d8e2]/30 rounded-2xl p-3.5 flex items-start gap-2.5 text-xs text-[#0c8f97] font-medium">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#0c8f97]" />
+              <span>Al completar el siguiente formulario de despacho, se enviará el pedido completo junto con tus datos de envío directamente a WhatsApp.</span>
+            </div>
+          </div>
+        )}
+
         {/* Dispatch Form Container */}
         <div className="bg-slate-50 p-8 sm:p-12 rounded-3xl border border-slate-200 max-w-3xl mx-auto space-y-6 shadow-sm">
           <div className="border-b border-slate-200/80 pb-4 text-center space-y-1">
@@ -125,7 +278,7 @@ export const ShippingSection: React.FC = () => {
           <form onSubmit={handleSendToWhatsApp} className="space-y-5 text-xs">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-1.5">
-                <label className="font-light text-slate-700 block tracking-wide">Nombre y Apellido:</label>
+                <label className="font-light text-slate-700 block tracking-wide">Nombre y Apellido *</label>
                 <input
                   type="text"
                   required
@@ -137,7 +290,7 @@ export const ShippingSection: React.FC = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-light text-slate-700 block tracking-wide">Cédula / RIF:</label>
+                <label className="font-light text-slate-700 block tracking-wide">Cédula / RIF *</label>
                 <input
                   type="text"
                   required
@@ -151,7 +304,7 @@ export const ShippingSection: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-1.5">
-                <label className="font-light text-slate-700 block tracking-wide">Correo Electrónico:</label>
+                <label className="font-light text-slate-700 block tracking-wide">Correo Electrónico *</label>
                 <input
                   type="email"
                   required
@@ -163,7 +316,7 @@ export const ShippingSection: React.FC = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-light text-slate-700 block tracking-wide">Teléfono de Contacto:</label>
+                <label className="font-light text-slate-700 block tracking-wide">Teléfono de Contacto *</label>
                 <input
                   type="tel"
                   required
@@ -176,7 +329,7 @@ export const ShippingSection: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="font-light text-slate-700 block tracking-wide">Selecciona la Agencia:</label>
+              <label className="font-light text-slate-700 block tracking-wide">Selecciona la Agencia *</label>
               <div className="grid grid-cols-3 gap-4">
                 {(['MRW', 'Zoom', 'Tealca'] as const).map((ag) => (
                   <button
@@ -197,7 +350,7 @@ export const ShippingSection: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-1.5">
-                <label className="font-light text-slate-700 block tracking-wide">Estado:</label>
+                <label className="font-light text-slate-700 block tracking-wide">Estado *</label>
                 <input
                   type="text"
                   required
@@ -209,7 +362,7 @@ export const ShippingSection: React.FC = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-light text-slate-700 block tracking-wide">Ciudad:</label>
+                <label className="font-light text-slate-700 block tracking-wide">Ciudad *</label>
                 <input
                   type="text"
                   required
@@ -222,7 +375,7 @@ export const ShippingSection: React.FC = () => {
             </div>
 
             <div className="space-y-1.5">
-              <label className="font-light text-slate-700 block tracking-wide">Dirección Exacta o Código de Agencia:</label>
+              <label className="font-light text-slate-700 block tracking-wide">Dirección Exacta o Código de Agencia *</label>
               <input
                 type="text"
                 required
@@ -234,7 +387,7 @@ export const ShippingSection: React.FC = () => {
             </div>
 
             <div className="space-y-1.5 pt-2">
-              <label className="font-light text-slate-700 block tracking-wide">Foto de Cédula (Opcional para registro):</label>
+              <label className="font-light text-slate-700 block tracking-wide">Foto de Cédula (Opcional):</label>
               <div className="flex items-center gap-4">
                 <label className="flex-1 flex items-center justify-center gap-2 p-4 bg-white border border-dashed border-slate-300 rounded-2xl cursor-pointer hover:border-[#20d8e2] transition-colors">
                   <Package className="w-4 h-4 text-slate-400" />
@@ -256,13 +409,13 @@ export const ShippingSection: React.FC = () => {
               </div>
             </div>
 
-            <div className="pt-4">
+            <div className="pt-6 flex justify-center">
               <button
                 type="submit"
-                className="w-full py-4 rounded-2xl bg-[#20d8e2] hover:bg-[#1bc5cf] text-slate-950 font-semibold text-sm tracking-wide shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full max-w-md py-4 sm:py-5 px-8 bg-[#20d8e2] hover:bg-[#1bc5cf] text-slate-950 font-black text-base sm:text-lg tracking-wide rounded-2xl shadow-xl shadow-[#20d8e2]/30 hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-3 cursor-pointer animate-cart-bounce hover:scale-105 active:scale-95"
               >
-                <Send className="w-4 h-4" />
-                <span>Enviar Datos de Envío por WhatsApp</span>
+                <Send className="w-6 h-6 text-slate-950 shrink-0" />
+                <span>Enviar pedido</span>
               </button>
             </div>
           </form>

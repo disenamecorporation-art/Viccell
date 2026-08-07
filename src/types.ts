@@ -7,7 +7,8 @@ export type ActiveTab =
   | 'servicios' 
   | 'envios' 
   | 'tracking'
-  | 'contacto';
+  | 'contacto'
+  | 'como-comprar';
 
 export type TrackingPhase = 'COTIZADO' | 'EN PROCESO' | 'DESPACHADO';
 

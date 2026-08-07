@@ -47,8 +47,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateToTab }) => {
                 </button>
               </li>
               <li>
-                <button onClick={() => onNavigateToTab('precios-mayor')} className="hover:text-[#20d8e2] cursor-pointer">
-                  Escala de Precios
+                <button onClick={() => onNavigateToTab('como-comprar')} className="hover:text-[#20d8e2] cursor-pointer">
+                  ¿Cómo comprar?
                 </button>
               </li>
             </ul>
@@ -75,7 +75,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateToTab }) => {
         </div>
 
         <div className="pt-6 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 font-light">
-          <div>© {new Date().getFullYear()} Viccell. Todos los derechos reservados.</div>
+          <div>© {new Date().getFullYear()} Viccell. Todos los derechos reservados. Hecho por Legaint Corporation</div>
           <button
             onClick={scrollToTop}
             className="flex items-center gap-1 text-slate-400 hover:text-[#20d8e2] cursor-pointer font-bold"

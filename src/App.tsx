@@ -15,6 +15,7 @@ import { StoreSection } from './components/StoreSection';
 import { TrackingSection } from './components/TrackingSection';
 import { ProductModal } from './components/ProductModal';
 import { ShippingSection } from './components/ShippingSection';
+import { HowToBuySection } from './components/HowToBuySection';
 import { CartDrawer } from './components/CartDrawer';
 import { AuthModal } from './components/AuthModal';
 import { AdminPanelModal } from './components/AdminPanelModal';
@@ -292,18 +293,7 @@ export default function App() {
             onNavigateToTab={handleNavigateToTab}
           />
 
-          {/* 2 Ad Banners */}
-          <AdBanners
-            onNavigateToTab={handleNavigateToTab}
-            currentUser={currentUser}
-          />
-
           <Advantages />
-
-          <BusinessServices
-            onOpenWhatsApp={handleOpenWhatsAppGeneral}
-            onScrollToCatalog={() => handleNavigateToTab('tienda-mayorista', 'mayorista')}
-          />
         </main>
       )}
 
@@ -341,7 +331,14 @@ export default function App() {
             onSelectProduct={setSelectedProduct}
             onAddToCart={handleAddToCart}
           />
-          <ShippingSection />
+          <ShippingSection
+            cartItems={cartItems}
+            storeMode={storeMode}
+            currentUser={currentUser}
+            onUpdateQuantity={handleUpdateCartQty}
+            onRemoveItem={handleRemoveCartItem}
+            onClearCart={handleClearCart}
+          />
         </main>
       )}
 
@@ -359,7 +356,21 @@ export default function App() {
       {/* ENVIOS */}
       {activeTab === 'envios' && (
         <main className="min-h-[80vh] py-4">
-          <ShippingSection />
+          <ShippingSection
+            cartItems={cartItems}
+            storeMode={storeMode}
+            currentUser={currentUser}
+            onUpdateQuantity={handleUpdateCartQty}
+            onRemoveItem={handleRemoveCartItem}
+            onClearCart={handleClearCart}
+          />
+        </main>
+      )}
+
+      {/* COMO COMPRAR TUTORIAL */}
+      {activeTab === 'como-comprar' && (
+        <main className="min-h-[80vh] py-4">
+          <HowToBuySection onNavigateToTab={handleNavigateToTab} />
         </main>
       )}
 
@@ -383,6 +394,8 @@ export default function App() {
         onUpdateQuantity={handleUpdateCartQty}
         onRemoveItem={handleRemoveCartItem}
         onClearCart={handleClearCart}
+        currentUser={currentUser}
+        onProceedToDispatch={() => handleNavigateToTab('envios')}
       />
 
       <AuthModal

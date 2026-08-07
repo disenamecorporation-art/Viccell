@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ShoppingCart, Menu, X, Store, Building2, Home, User as UserIcon, LogOut, ShieldCheck, LogIn } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ShoppingCart, Menu, X, Store, Building2, Home, User as UserIcon, LogOut, ShieldCheck, LogIn, ChevronDown, HelpCircle } from 'lucide-react';
 import { StoreMode, ActiveTab, User } from '../types';
 
 interface NavbarProps {
@@ -29,6 +29,19 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [storesDropdownOpen, setStoresDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setStoresDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleTabSelect = (tab: ActiveTab, mode?: StoreMode) => {
     if (mode) {
@@ -36,8 +49,11 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
     setActiveTab(tab);
     setMobileMenuOpen(false);
+    setStoresDropdownOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const isStoreActive = activeTab === 'tienda-mayorista' || activeTab === 'tienda-minorista';
 
   return (
     <header className="sticky top-0 z-40 bg-slate-950 text-white border-b border-slate-800 shadow-xl font-['Montserrat',sans-serif]">
@@ -68,24 +84,66 @@ export const Navbar: React.FC<NavbarProps> = ({
               Inicio
             </button>
 
-            <button 
-              onClick={() => handleTabSelect('tienda-mayorista', 'mayorista')} 
-              className={`px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'tienda-mayorista' ? 'bg-[#20d8e2] text-slate-950 font-black' : 'bg-slate-900 hover:bg-slate-800 text-[#20d8e2] border border-slate-800'
-              }`}
-            >
-              <Building2 className="w-4 h-4" />
-              Tienda Mayorista
-            </button>
+            {/* Unified "Tiendas" Dropdown Button */}
+            <div className="relative" ref={dropdownRef}>
+              <button 
+                onClick={() => setStoresDropdownOpen(!storesDropdownOpen)}
+                onMouseEnter={() => setStoresDropdownOpen(true)}
+                className={`px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                  isStoreActive
+                    ? 'bg-[#20d8e2] text-slate-950 font-black' 
+                    : 'bg-slate-900 hover:bg-slate-800 text-[#20d8e2] border border-slate-800'
+                }`}
+              >
+                <Store className="w-4 h-4" />
+                <span>Tiendas</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${storesDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
 
+              {/* Dropdown Menu */}
+              {storesDropdownOpen && (
+                <div 
+                  onMouseLeave={() => setStoresDropdownOpen(false)}
+                  className="absolute top-full left-0 mt-1 w-56 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl p-2 z-50 backdrop-blur-xl animate-fade-in space-y-1"
+                >
+                  <button
+                    onClick={() => handleTabSelect('tienda-mayorista', 'mayorista')}
+                    className={`w-full text-left p-3 rounded-xl flex items-start gap-2.5 transition-all cursor-pointer ${
+                      activeTab === 'tienda-mayorista' ? 'bg-[#20d8e2]/20 text-[#20d8e2] border border-[#20d8e2]/30' : 'hover:bg-slate-900 text-slate-200'
+                    }`}
+                  >
+                    <Building2 className="w-5 h-5 text-[#20d8e2] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-black text-xs uppercase tracking-wider">Tienda Mayorista</p>
+                      <p className="text-[10px] text-slate-400 font-light normal-case">Precios por escala y lotes</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => handleTabSelect('tienda-minorista', 'minorista')}
+                    className={`w-full text-left p-3 rounded-xl flex items-start gap-2.5 transition-all cursor-pointer ${
+                      activeTab === 'tienda-minorista' ? 'bg-[#20d8e2]/20 text-[#20d8e2] border border-[#20d8e2]/30' : 'hover:bg-slate-900 text-slate-200'
+                    }`}
+                  >
+                    <Store className="w-5 h-5 text-[#20d8e2] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-black text-xs uppercase tracking-wider">Tienda Minorista</p>
+                      <p className="text-[10px] text-slate-400 font-light normal-case">Ventas al detal por unidad</p>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* New "¿Cómo comprar?" Button */}
             <button 
-              onClick={() => handleTabSelect('tienda-minorista', 'minorista')} 
-              className={`px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'tienda-minorista' ? 'bg-[#20d8e2] text-slate-950 font-black' : 'bg-slate-900 hover:bg-slate-800 text-[#20d8e2] border border-slate-800'
+              onClick={() => handleTabSelect('como-comprar')} 
+              className={`px-3 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'como-comprar' ? 'bg-[#20d8e2] text-slate-950 font-black' : 'hover:bg-slate-900 hover:text-white'
               }`}
             >
-              <Store className="w-4 h-4" />
-              Tienda Minorista
+              <HelpCircle className="w-4 h-4 text-[#20d8e2]" />
+              ¿Cómo comprar?
             </button>
 
             <button 
@@ -206,24 +264,39 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Inicio</span>
             </button>
 
-            <button 
-              onClick={() => handleTabSelect('tienda-mayorista', 'mayorista')} 
-              className={`text-left py-3 px-4 rounded-xl flex items-center gap-2.5 ${
-                activeTab === 'tienda-mayorista' ? 'bg-[#20d8e2] text-slate-950 font-black' : 'hover:bg-slate-900 text-[#20d8e2]'
-              }`}
-            >
-              <Building2 className="w-5 h-5" />
-              <span>Tienda Mayorista</span>
-            </button>
+            <div className="bg-slate-900/60 rounded-2xl p-2 space-y-1 border border-slate-800">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#20d8e2] px-3 pt-1 block">
+                Tiendas Viccell
+              </span>
+              <button 
+                onClick={() => handleTabSelect('tienda-mayorista', 'mayorista')} 
+                className={`w-full text-left py-2.5 px-3 rounded-xl flex items-center gap-2.5 ${
+                  activeTab === 'tienda-mayorista' ? 'bg-[#20d8e2] text-slate-950 font-black' : 'hover:bg-slate-800 text-slate-200'
+                }`}
+              >
+                <Building2 className="w-4 h-4 text-[#20d8e2]" />
+                <span>Tienda Mayorista</span>
+              </button>
+
+              <button 
+                onClick={() => handleTabSelect('tienda-minorista', 'minorista')} 
+                className={`w-full text-left py-2.5 px-3 rounded-xl flex items-center gap-2.5 ${
+                  activeTab === 'tienda-minorista' ? 'bg-[#20d8e2] text-slate-950 font-black' : 'hover:bg-slate-800 text-slate-200'
+                }`}
+              >
+                <Store className="w-4 h-4 text-[#20d8e2]" />
+                <span>Tienda Minorista</span>
+              </button>
+            </div>
 
             <button 
-              onClick={() => handleTabSelect('tienda-minorista', 'minorista')} 
+              onClick={() => handleTabSelect('como-comprar')} 
               className={`text-left py-3 px-4 rounded-xl flex items-center gap-2.5 ${
-                activeTab === 'tienda-minorista' ? 'bg-[#20d8e2] text-slate-950 font-black' : 'hover:bg-slate-900 text-[#20d8e2]'
+                activeTab === 'como-comprar' ? 'bg-[#20d8e2] text-slate-950 font-black' : 'hover:bg-slate-900'
               }`}
             >
-              <Store className="w-5 h-5" />
-              <span>Tienda Minorista</span>
+              <HelpCircle className="w-5 h-5 text-[#20d8e2]" />
+              <span>¿Cómo comprar?</span>
             </button>
 
             <button 
