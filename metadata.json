@@ -1,0 +1,6 @@
+{
+  "name": "Viccell",
+  "description": "Importadora y distribuidora de repuestos e insumos técnicos para telefonía móvil en Maracay, Venezuela.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
