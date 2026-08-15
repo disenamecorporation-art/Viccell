@@ -28,6 +28,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }
 
     try {
       if (supabase) {
+        const adminEmails = [
+          'legaintcorporation@gmail.com',
+          'importadoramkl@gmail.com',
+          'viccelllproveedor@gmail.com',
+          'victormkl.19@gmail.com',
+          'disenamecorporation@gmail.com'
+        ];
+        const isEmailAdmin = adminEmails.includes(formData.email.toLowerCase());
+
         if (mode === 'register') {
           const { data, error: signUpError } = await supabase.auth.signUp({
             email: formData.email,
@@ -35,7 +44,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }
             options: {
               data: {
                 full_name: formData.name || formData.email.split('@')[0],
-                role: formData.email.toLowerCase() === 'legaintcorporation@gmail.com' ? 'admin' : 'user'
+                role: isEmailAdmin ? 'admin' : 'user'
               }
             }
           });
@@ -47,7 +56,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }
             id: authUser?.id || `user-${Date.now()}`,
             name: formData.name || authUser?.user_metadata?.full_name || 'Cliente Viccell',
             email: formData.email,
-            role: formData.email.toLowerCase() === 'legaintcorporation@gmail.com' ? 'admin' : 'user',
+            role: isEmailAdmin ? 'admin' : 'user',
           };
           onLogin(userObj);
           onClose();
@@ -60,7 +69,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }
           if (signInError) throw signInError;
 
           const authUser = data.user;
-          const isAdmin = formData.email.toLowerCase() === 'legaintcorporation@gmail.com' || authUser?.user_metadata?.role === 'admin';
+          const isAdmin = isEmailAdmin || authUser?.user_metadata?.role === 'admin';
           const userObj: UserType = {
             id: authUser?.id || 'user-std',
             name: authUser?.user_metadata?.full_name || formData.email.split('@')[0] || 'Cliente',
@@ -72,7 +81,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }
         }
       } else {
         // Fallback simulation if Supabase is not configured yet
-        const isAdmin = formData.email.toLowerCase() === 'legaintcorporation@gmail.com';
+        const adminEmails = [
+          'legaintcorporation@gmail.com',
+          'importadoramkl@gmail.com',
+          'viccelllproveedor@gmail.com',
+          'victormkl.19@gmail.com',
+          'disenamecorporation@gmail.com'
+        ];
+        const isAdmin = adminEmails.includes(formData.email.toLowerCase());
         const user: UserType = {
           id: mode === 'login' ? 'user-std' : `user-${Date.now()}`,
           name: mode === 'register' ? formData.name || 'Cliente Viccell' : (formData.email.split('@')[0] || 'Cliente'),

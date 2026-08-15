@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Edit2, Trash2, ShieldCheck, Package, Save, Clock, CheckCircle2, FolderTree, Layers, Landmark } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, ShieldCheck, Package, Save, Clock, CheckCircle2, FolderTree, Layers, Landmark, BookOpen } from 'lucide-react';
 import { Product, Brand, Category, TrackingOrder, TrackingPhase, PaymentMethodConfig } from '../types';
 import { getStoredCategories, saveStoredCategories, CategoryWithSubs } from '../data/categories';
 
@@ -614,6 +614,44 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                 </button>
               </div>
             </form>
+
+            {/* Tutorial Paso a Paso */}
+            <div className="mt-8 p-6 bg-slate-950/60 border border-slate-800 rounded-2xl space-y-5">
+              <div className="flex items-center gap-2 text-[#20d8e2] border-b border-slate-800 pb-3">
+                <BookOpen className="w-5 h-5" />
+                <h4 className="text-sm font-black uppercase tracking-wider">Manual de Operación: Configurar Métodos de Pago Bancarios</h4>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-[11px] text-slate-300 leading-relaxed font-light">
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">1</span>
+                    <span>Ubicar los Datos</span>
+                  </div>
+                  <p>Diríjase a la sección correspondiente del formulario según el método de pago que desea configurar: <strong className="text-[#20d8e2]">Pago Móvil</strong>, <strong className="text-[#20d8e2]">Transferencia Banesco</strong>, o <strong className="text-[#20d8e2]">Binance USDT</strong>.</p>
+                </div>
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">2</span>
+                    <span>Rellenar Campos</span>
+                  </div>
+                  <p>Haga clic dentro de cada cuadro de texto para escribir. Introduzca el Banco, Cédula o RIF del titular, número de teléfono o ID de billetera. Si tiene un código QR, suba la imagen a un servidor (ej. Postimages) y pegue el enlace directo terminado en .png o .jpg en <strong className="text-white">QR URL</strong>. Si no lo tiene, deje ese campo totalmente en blanco.</p>
+                </div>
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">3</span>
+                    <span>Guardar Cambios</span>
+                  </div>
+                  <p>Baje al final de esta pestaña y haga clic en el botón verde azulado que dice <strong className="text-white">"Guardar Métodos de Pago"</strong>. Espere un segundo a que aparezca la confirmación visual de que los datos fueron sincronizados en la base de datos.</p>
+                </div>
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800/60 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">4</span>
+                    <span>Verificación Final</span>
+                  </div>
+                  <p>Cualquier cliente que realice una orden de compra y avance al paso de "Reportar Pago" en el carrito, verá inmediatamente los nuevos datos de cuenta actualizados de forma dinámica.</p>
+                </div>
+              </div>
+            </div>
           </div>
         ) : activeTabMain === 'categories' ? (
           <div className="space-y-6">
@@ -704,6 +742,44 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Tutorial Paso a Paso */}
+            <div className="mt-8 p-6 bg-slate-950/60 border border-slate-800 rounded-2xl space-y-5">
+              <div className="flex items-center gap-2 text-[#20d8e2] border-b border-slate-800 pb-3">
+                <BookOpen className="w-5 h-5" />
+                <h4 className="text-sm font-black uppercase tracking-wider">Manual de Operación: Crear y Clasificar Categorías de la Tienda</h4>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-[11px] text-slate-300 leading-relaxed font-light">
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">1</span>
+                    <span>Crear Categoría</span>
+                  </div>
+                  <p>Haga clic en la caja de texto superior que dice <em className="text-slate-400">"Nombre de la nueva categoría principal..."</em>, escriba la categoría (ej. <code className="text-white bg-slate-800 px-1 rounded">Micas</code>) y luego haga clic en el botón azul de la derecha que dice <strong className="text-[#20d8e2]">"Añadir Categoría Principal"</strong>.</p>
+                </div>
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">2</span>
+                    <span>Añadir Subcategorías</span>
+                  </div>
+                  <p>Busque la tarjeta que se acaba de crear abajo. Haga clic en la caja de texto interna que dice <em className="text-slate-400">"Nueva subcategoría..."</em>, escriba el modelo o detalle específico (ej. <code className="text-white bg-slate-800 px-1 rounded">Mica Gel Samsung</code>) y haga clic en el botón azul <strong className="text-white">"Añadir"</strong> que está dentro de esa misma tarjeta.</p>
+                </div>
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">3</span>
+                    <span>Eliminar Elementos</span>
+                  </div>
+                  <p>Si desea borrar una subcategoría errónea, haga clic en el botón de la equis roja <strong className="text-red-400 font-bold">"x"</strong> al lado de su nombre. Si desea borrar una categoría entera con todo lo que tiene adentro, haga clic en el botón rojo de la esquina derecha de la tarjeta que dice <strong className="text-red-400">"Eliminar Categoría"</strong>.</p>
+                </div>
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800/60 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">4</span>
+                    <span>Filtros Automáticos</span>
+                  </div>
+                  <p>¡Listo! Estas nuevas categorías y subcategorías aparecerán inmediatamente en la barra lateral izquierda de la tienda para que sus clientes puedan buscar repuestos de forma rápida.</p>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
@@ -891,6 +967,44 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                 </div>
               </form>
             )}
+
+            {/* Tutorial Paso a Paso */}
+            <div className="mt-8 p-6 bg-slate-950/60 border border-slate-800 rounded-2xl space-y-5">
+              <div className="flex items-center gap-2 text-[#20d8e2] border-b border-slate-800 pb-3">
+                <BookOpen className="w-5 h-5" />
+                <h4 className="text-sm font-black uppercase tracking-wider">Manual de Operación: Administrar Tracking de Importaciones</h4>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-[11px] text-slate-300 leading-relaxed font-light">
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">1</span>
+                    <span>Abrir Formulario</span>
+                  </div>
+                  <p>Haga clic en el botón <strong className="text-[#20d8e2]">"Crear Proyecto / Orden"</strong> ubicado en las sub-pestañas superiores. Si desea editar uno existente, busque la orden en la tabla de abajo y haga clic en el botón azul celeste con forma de lápiz (<strong className="text-[#20d8e2]">Editar</strong>).</p>
+                </div>
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">2</span>
+                    <span>Rellenar Información</span>
+                  </div>
+                  <p>Escriba el <strong className="text-white">Nombre del Cliente</strong>, el <strong className="text-white">Código de Seguimiento</strong> único que le asignará (ej. su número de cédula o cédula jurídica/guía), el <strong className="text-white">Detalle del Pedido</strong> (ej. <em>"Mano de obra, flexores y 300 pantallas"</em>), y seleccione la <strong className="text-[#20d8e2]">Fase actual</strong> (Cotizado 33%, En Proceso 66% o Despachado 100%).</p>
+                </div>
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">3</span>
+                    <span>Guardar y Publicar</span>
+                  </div>
+                  <p>Escriba novedades específicas en la sección <strong className="text-white">Notas del Administrador</strong> (ej. <em>"Contenedor en aduana de Maracay, entrega estimada el martes"</em>). Para guardar, haga clic en el botón azul inferior <strong className="text-white">"Crear Proyecto y Código"</strong> (o "Actualizar" si está editando).</p>
+                </div>
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800/60 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">4</span>
+                    <span>Consulta de Cliente</span>
+                  </div>
+                  <p>Informe a su cliente de su código asignado. El cliente ingresará este código en la caja de <strong className="text-[#20d8e2]">"Rastrea tu Pedido"</strong> de la página principal para visualizar su barra de avance y notas en tiempo real sin tener que registrarse.</p>
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
           /* PRODUCTS MANAGEMENT VIEW */
@@ -1133,6 +1247,51 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                 </div>
               </form>
             )}
+
+            {/* Tutorial Paso a Paso */}
+            <div className="mt-8 p-6 bg-slate-950/60 border border-slate-800 rounded-2xl space-y-5">
+              <div className="flex items-center gap-2 text-[#20d8e2] border-b border-slate-800 pb-3">
+                <BookOpen className="w-5 h-5" />
+                <h4 className="text-sm font-black uppercase tracking-wider">Manual de Operación: Creación, Edición y Publicación de Productos</h4>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 text-[11px] text-slate-300 leading-relaxed font-light">
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">1</span>
+                    <span>Acceder al Formulario</span>
+                  </div>
+                  <p>Haga clic en el botón <strong className="text-[#20d8e2]">"Crear Producto"</strong> con el símbolo <strong className="text-[#20d8e2] font-bold">(+)</strong> en la barra de sub-pestañas superiores. Si desea editar uno existente, en la sub-pestaña <strong className="text-white">"Ver Lista"</strong>, ubique el producto y presione el botón del lápiz celeste en la columna de <strong className="text-[#20d8e2]">Acciones</strong>.</p>
+                </div>
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">2</span>
+                    <span>Datos Principales</span>
+                  </div>
+                  <p>Haga clic en <strong className="text-white">Título del Producto</strong> e ingrese el nombre comercial (ej. <em>"Pantalla Redmi Note 12 Original"</em>). Rellene el cuadro <strong className="text-white">SKU</strong> con el código de inventario (ej. <code>PAN-RED-12</code>). Luego use los menús desplegables para seleccionar la <strong className="text-white">Marca</strong>, <strong className="text-white">Categoría</strong> y <strong className="text-white">Subcategoría</strong> correspondientes.</p>
+                </div>
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">3</span>
+                    <span>Precios de Venta</span>
+                  </div>
+                  <p>Ingrese el <strong className="text-amber-400">Precio Detal</strong> (venta por unidad, ej: <code>15.50</code>). Luego, configure el <strong className="text-[#20d8e2]">Precio Mayorista</strong> (ej: <code>12.00</code>) y especifique en <strong className="text-white">Cantidad Mínima Mayor</strong> la cantidad de unidades necesarias para activar este descuento en el carrito (ej: <code>3</code>).</p>
+                </div>
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">4</span>
+                    <span>Imagen y Descripción</span>
+                  </div>
+                  <p>Haga clic en <strong className="text-white">URL de la Imagen</strong> y pegue el enlace directo de su foto (subida previamente a servidores gratuitos como <em>Postimages.org</em> o <em>ImgBB</em>, asegurándose de que termine en <code>.jpg</code> o <code>.png</code>). Describa la compatibilidad y detalles del repuesto en la caja de <strong className="text-white">Descripción</strong>.</p>
+                </div>
+                <div className="space-y-2 p-4 bg-slate-800/40 border border-slate-800/60 rounded-xl">
+                  <div className="font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#20d8e2]/20 text-[#20d8e2] flex items-center justify-center text-[10px] font-black">5</span>
+                    <span>Guardar Producto</span>
+                  </div>
+                  <p>Opcionalmente, active las casillas <strong className="text-white">"Producto Destacado"</strong> (para lucirlo en la portada) o <strong className="text-white">"Más Vendido"</strong> (para añadir una etiqueta de alta rotación). Finalmente, haga clic en el botón azul <strong className="text-white">"Crear Producto"</strong> (o "Guardar Cambios" si edita). ¡Y listo, se publicará en vivo!</p>
+                </div>
+              </div>
+            </div>
           </div>
         ))}
 
