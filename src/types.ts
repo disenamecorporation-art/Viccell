@@ -82,6 +82,20 @@ export interface User {
   name: string;
   email: string;
   role: 'user' | 'admin';
+  idNumber?: string;
+  phone?: string;
+  rif?: string;
+  state?: string;
+  city?: string;
+  address?: string;
+  birthday?: string;
+  favoriteBrand?: string;
+  instagram?: string;
+  profileCompleted?: boolean;
+  secondaryCompleted?: boolean;
+  idPhotoName?: string;
+  selfiePhotoName?: string;
+  isFirstPurchase?: boolean;
 }
 
 export interface DispatchForm {
@@ -89,11 +103,32 @@ export interface DispatchForm {
   idNumber: string;
   email: string;
   phone: string;
-  agency: 'MRW' | 'Zoom' | 'Tealca';
+  agency: 'MRW' | 'Zoom' | 'Tealca' | 'Marítimo' | 'Aéreo';
   state: string;
   city: string;
   agencyAddress: string;
   idPhotoName?: string;
+  selfiePhotoName?: string;
+  rif?: string;
+}
+
+export interface PaymentMethodConfig {
+  pagoMovil: {
+    titular: string;
+    cedula: string;
+    phone: string;
+    banco: string;
+  };
+  transferencia: {
+    banco: string;
+    titular: string;
+    cuenta: string;
+    cedula: string;
+  };
+  binance: {
+    usuario: string;
+    qrUrl?: string;
+  };
 }
 
 export interface AdBannerItem {

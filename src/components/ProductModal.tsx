@@ -168,9 +168,16 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                   </button>
                   <input
                     type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-14 text-center font-black text-slate-900 bg-transparent text-sm focus:outline-none"
+                    min="1"
+                    value={quantity === 0 ? '' : quantity}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? 0 : parseInt(e.target.value, 10);
+                      setQuantity(isNaN(val) ? 1 : Math.max(0, val));
+                    }}
+                    onBlur={() => {
+                      if (quantity <= 0) setQuantity(1);
+                    }}
+                    className="w-16 text-center font-black text-slate-900 bg-transparent text-sm focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <button
                     onClick={() => handleQtyChange(1)}

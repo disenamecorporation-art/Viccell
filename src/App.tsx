@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { StoreMode, ActiveTab, Product, CartItem, User, TrackingOrder } from './types';
+import { supabase } from './lib/supabase';
+import { StoreMode, ActiveTab, Product, CartItem, User, TrackingOrder, PaymentMethodConfig } from './types';
 import { PRODUCTS } from './data/products';
 import { TopBar } from './components/TopBar';
 import { Navbar } from './components/Navbar';
@@ -23,10 +24,48 @@ import { UserDashboardModal } from './components/UserDashboardModal';
 import { Footer } from './components/Footer';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
 
+const DEFAULT_PAYMENT_METHODS: PaymentMethodConfig = {
+  pagoMovil: {
+    titular: 'Victor Jimenez',
+    cedula: 'V-26.161.731',
+    phone: '0412-973.26.52',
+    banco: '0105 - Banco Mercantil C.A.'
+  },
+  transferencia: {
+    banco: 'Mercantil, C.A, Banco Universal',
+    titular: 'Victor Jimenez',
+    cuenta: '01050066441066447705',
+    cedula: 'V-26.161.731'
+  },
+  binance: {
+    usuario: 'Liamyah3l',
+    qrUrl: 'https://i.postimg.cc/ydTgPJ7P/QRbinance.jpg'
+  }
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [storeMode, setStoreMode] = useState<StoreMode>('mayorista');
   const [trackingSearchCode, setTrackingSearchCode] = useState('');
+  
+  // Dynamic Payment Methods State
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodConfig>(() => {
+    try {
+      const saved = localStorage.getItem('viccell_payment_methods');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Clean out cached Victor Binance values or obsolete RIF configuration
+        if (parsed.binance?.usuario === 'Victor Binance' || parsed.binance?.rif !== undefined || parsed.binance?.usuario !== 'Liamyah3l') {
+          localStorage.setItem('viccell_payment_methods', JSON.stringify(DEFAULT_PAYMENT_METHODS));
+          return DEFAULT_PAYMENT_METHODS;
+        }
+        return parsed;
+      }
+      return DEFAULT_PAYMENT_METHODS;
+    } catch {
+      return DEFAULT_PAYMENT_METHODS;
+    }
+  });
   
   // Products state (persisted in localStorage for Admin CRUD)
   const [products, setProducts] = useState<Product[]>(() => {
@@ -128,6 +167,71 @@ export default function App() {
     }
   }, [currentUser]);
 
+  // Persist Payment Methods
+  useEffect(() => {
+    try {
+      localStorage.setItem('viccell_payment_methods', JSON.stringify(paymentMethods));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [paymentMethods]);
+
+  // Load Payment Methods from Supabase on Mount
+  useEffect(() => {
+    async function loadPaymentMethods() {
+      if (!supabase) return;
+      try {
+        const { data, error } = await supabase
+          .from('payment_methods')
+          .select('*')
+          .eq('id', 'default_config')
+          .single();
+        
+        if (data) {
+          setPaymentMethods(prev => ({
+            ...prev,
+            pagoMovil: {
+              ...prev.pagoMovil,
+              phone: data.banesco_telefono || prev.pagoMovil.phone,
+              cedula: data.banesco_cedula || prev.pagoMovil.cedula,
+            },
+            binance: {
+              usuario: data.binance_usuario || prev.binance.usuario,
+              qrUrl: data.binance_qr_url || prev.binance.qrUrl,
+            }
+          }));
+        }
+      } catch (err) {
+        console.error('Error loading payment methods from Supabase:', err);
+      }
+    }
+    loadPaymentMethods();
+  }, []);
+
+  const handleUpdatePaymentMethods = async (newMethods: PaymentMethodConfig) => {
+    setPaymentMethods(newMethods);
+    if (supabase) {
+      try {
+        await supabase.from('payment_methods').upsert({
+          id: 'default_config',
+          banesco_telefono: newMethods.pagoMovil.phone,
+          banesco_cedula: newMethods.pagoMovil.cedula,
+          pago_rapido_telefono: newMethods.pagoMovil.phone,
+          pago_rapido_cedula: newMethods.pagoMovil.cedula,
+          binance_usuario: newMethods.binance.usuario,
+          binance_qr_url: newMethods.binance.qrUrl || null,
+          updated_at: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error('Error syncing with Supabase:', err);
+      }
+    }
+  };
+
+  const handleUpdateCurrentUser = (updatedUser: User) => {
+    setCurrentUser(updatedUser);
+  };
+
   const handleNavigateToTab = (tab: ActiveTab, mode?: StoreMode) => {
     if (mode) {
       setStoreMode(mode);
@@ -182,6 +286,19 @@ export default function App() {
           const newQty = Math.max(1, item.quantity + delta);
           const newUnitPrice = calculateUnitPrice(item.product, newQty, item.mode);
           return { ...item, quantity: newQty, unitPrice: newUnitPrice };
+        }
+        return item;
+      });
+    });
+  };
+
+  const handleSetCartQty = (productId: string, newQty: number) => {
+    const validQty = Math.max(1, newQty);
+    setCartItems(prev => {
+      return prev.map(item => {
+        if (item.product.id === productId) {
+          const newUnitPrice = calculateUnitPrice(item.product, validQty, item.mode);
+          return { ...item, quantity: validQty, unitPrice: newUnitPrice };
         }
         return item;
       });
@@ -335,7 +452,10 @@ export default function App() {
             cartItems={cartItems}
             storeMode={storeMode}
             currentUser={currentUser}
+            paymentMethods={paymentMethods}
+            onUpdateCurrentUser={handleUpdateCurrentUser}
             onUpdateQuantity={handleUpdateCartQty}
+            onSetQuantity={handleSetCartQty}
             onRemoveItem={handleRemoveCartItem}
             onClearCart={handleClearCart}
           />
@@ -360,7 +480,10 @@ export default function App() {
             cartItems={cartItems}
             storeMode={storeMode}
             currentUser={currentUser}
+            paymentMethods={paymentMethods}
+            onUpdateCurrentUser={handleUpdateCurrentUser}
             onUpdateQuantity={handleUpdateCartQty}
+            onSetQuantity={handleSetCartQty}
             onRemoveItem={handleRemoveCartItem}
             onClearCart={handleClearCart}
           />
@@ -392,6 +515,7 @@ export default function App() {
         cartItems={cartItems}
         storeMode={storeMode}
         onUpdateQuantity={handleUpdateCartQty}
+        onSetQuantity={handleSetCartQty}
         onRemoveItem={handleRemoveCartItem}
         onClearCart={handleClearCart}
         currentUser={currentUser}
@@ -420,6 +544,8 @@ export default function App() {
         onAddTrackingOrder={handleAddTrackingOrder}
         onUpdateTrackingOrder={handleUpdateTrackingOrder}
         onDeleteTrackingOrder={handleDeleteTrackingOrder}
+        paymentMethods={paymentMethods}
+        onUpdatePaymentMethods={handleUpdatePaymentMethods}
       />
 
       <UserDashboardModal
@@ -428,6 +554,7 @@ export default function App() {
         currentUser={currentUser}
         orders={trackingOrders}
         cartItems={cartItems}
+        onUpdateCurrentUser={handleUpdateCurrentUser}
         onNavigateToTracking={(code) => handleViewTrackingOrder(code)}
         onNavigateToStore={() => handleNavigateToTab('tienda-mayorista', 'mayorista')}
       />

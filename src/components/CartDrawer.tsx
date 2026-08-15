@@ -8,6 +8,7 @@ interface CartDrawerProps {
   cartItems: CartItem[];
   storeMode: StoreMode;
   onUpdateQuantity: (productId: string, delta: number) => void;
+  onSetQuantity?: (productId: string, newQty: number) => void;
   onRemoveItem: (productId: string) => void;
   onClearCart: () => void;
   currentUser?: User | null;
@@ -20,6 +21,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   cartItems,
   storeMode,
   onUpdateQuantity,
+  onSetQuantity,
   onRemoveItem,
   onClearCart,
   onProceedToDispatch,
@@ -107,15 +109,29 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                           <button
                             onClick={() => onUpdateQuantity(item.product.id, -1)}
                             className="w-6 h-6 text-slate-400 hover:text-white flex items-center justify-center font-bold text-xs cursor-pointer"
+                            aria-label="Disminuir cantidad"
                           >
                             -
                           </button>
-                          <span className="w-8 text-center text-xs font-black text-[#20d8e2]">
-                            {item.quantity}
-                          </span>
+                          <input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value, 10);
+                              if (onSetQuantity) {
+                                onSetQuantity(item.product.id, isNaN(val) ? 1 : Math.max(1, val));
+                              } else if (!isNaN(val)) {
+                                const diff = val - item.quantity;
+                                onUpdateQuantity(item.product.id, diff);
+                              }
+                            }}
+                            className="w-12 text-center text-xs font-black text-[#20d8e2] bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
                           <button
                             onClick={() => onUpdateQuantity(item.product.id, 1)}
                             className="w-6 h-6 text-slate-400 hover:text-white flex items-center justify-center font-bold text-xs cursor-pointer"
+                            aria-label="Aumentar cantidad"
                           >
                             +
                           </button>

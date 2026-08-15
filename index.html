@@ -1,6 +1,31 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      (function() {
+        if (typeof window !== 'undefined') {
+          if (typeof globalThis !== 'undefined' && !globalThis.global) {
+            globalThis.global = globalThis;
+          }
+          try {
+            var currentFetch = window.fetch;
+            var fetchFn = typeof currentFetch === 'function' ? currentFetch.bind(window) : currentFetch;
+            Object.defineProperty(window, 'fetch', {
+              get: function() {
+                return fetchFn;
+              },
+              set: function(fn) {
+                fetchFn = fn;
+              },
+              configurable: true,
+              enumerable: true
+            });
+          } catch (e) {
+            console.warn('Polyfill window.fetch error:', e);
+          }
+        }
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Viccell - Repuestos e Insumos Técnicos para Telefonía Móvil</title>

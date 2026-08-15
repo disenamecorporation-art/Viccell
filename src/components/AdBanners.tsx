@@ -77,7 +77,7 @@ export const AdBanners: React.FC<AdBannersProps> = ({ onNavigateToTab, currentUs
           {banners.map((banner, idx) => (
             <div
               key={banner.id}
-              className="relative overflow-hidden rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-md group min-h-[280px] flex flex-col justify-end p-6 sm:p-8 space-y-4"
+              className="relative overflow-hidden rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-md group min-h-[200px] sm:min-h-[280px] flex flex-col justify-end p-5 sm:p-8 space-y-3 sm:space-y-4"
             >
               {/* Background Image */}
               <img

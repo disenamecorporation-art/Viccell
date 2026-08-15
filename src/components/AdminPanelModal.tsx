@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { X, Plus, Edit2, Trash2, ShieldCheck, Package, Save, Clock, CheckCircle2, FolderTree, Layers } from 'lucide-react';
-import { Product, Brand, Category, TrackingOrder, TrackingPhase } from '../types';
+import React, { useState, useEffect } from 'react';
+import { X, Plus, Edit2, Trash2, ShieldCheck, Package, Save, Clock, CheckCircle2, FolderTree, Layers, Landmark } from 'lucide-react';
+import { Product, Brand, Category, TrackingOrder, TrackingPhase, PaymentMethodConfig } from '../types';
 import { getStoredCategories, saveStoredCategories, CategoryWithSubs } from '../data/categories';
 
 interface AdminPanelModalProps {
@@ -14,6 +14,8 @@ interface AdminPanelModalProps {
   onAddTrackingOrder: (newOrder: Omit<TrackingOrder, 'id'>) => void;
   onUpdateTrackingOrder: (updatedOrder: TrackingOrder) => void;
   onDeleteTrackingOrder: (orderId: string) => void;
+  paymentMethods: PaymentMethodConfig;
+  onUpdatePaymentMethods: (methods: PaymentMethodConfig) => void;
 }
 
 const BRANDS: Brand[] = [
@@ -47,10 +49,12 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
   onAddTrackingOrder,
   onUpdateTrackingOrder,
   onDeleteTrackingOrder,
+  paymentMethods,
+  onUpdatePaymentMethods,
 }) => {
   if (!isOpen) return null;
 
-  const [activeTabMain, setActiveTabMain] = useState<'products' | 'tracking' | 'categories'>('tracking');
+  const [activeTabMain, setActiveTabMain] = useState<'products' | 'tracking' | 'categories' | 'payment-methods'>('tracking');
   const [activeSubTab, setActiveSubTab] = useState<'list' | 'create'>('list');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
@@ -58,6 +62,21 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
   const [categoriesList, setCategoriesList] = useState<CategoryWithSubs[]>(getStoredCategories());
   const [newCatName, setNewCatName] = useState('');
   const [newSubName, setNewSubName] = useState<{ [catName: string]: string }>({});
+
+  // Payment Methods Admin form state
+  const [payForm, setPayForm] = useState<PaymentMethodConfig>(paymentMethods);
+  const [paySavedMessage, setPaySavedMessage] = useState(false);
+
+  useEffect(() => {
+    setPayForm(paymentMethods);
+  }, [paymentMethods]);
+
+  const handlePaymentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUpdatePaymentMethods(payForm);
+    setPaySavedMessage(true);
+    setTimeout(() => setPaySavedMessage(false), 4000);
+  };
 
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
@@ -346,10 +365,20 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
             <FolderTree className="w-4 h-4" />
             <span>Categorías y Subcategorías ({categoriesList.length})</span>
           </button>
+
+          <button
+            onClick={() => { setActiveTabMain('payment-methods'); }}
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTabMain === 'payment-methods' ? 'bg-[#20d8e2] text-slate-950 font-black shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            <Landmark className="w-4 h-4" />
+            <span>Métodos de Pago (Banco)</span>
+          </button>
         </div>
 
         {/* Sub Tabs (List vs Create/Edit) - Only for Tracking and Products */}
-        {activeTabMain !== 'categories' && (
+        {activeTabMain !== 'categories' && activeTabMain !== 'payment-methods' && (
           <div className="flex items-center gap-2 pb-2">
             <button
               onClick={() => {
@@ -378,8 +407,215 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
           </div>
         )}
 
-        {/* CATEGORIES MANAGEMENT VIEW */}
-        {activeTabMain === 'categories' ? (
+        {/* PAYMENT METHODS MANAGEMENT VIEW */}
+        {activeTabMain === 'payment-methods' ? (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="p-4 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold rounded-2xl flex items-center gap-2">
+              <Landmark className="w-4 h-4 shrink-0 animate-pulse" />
+              <span>Gestión de Métodos de Pago Viccell. Aquí puede modificar los datos bancarios y cuentas de Binance en tiempo real si el banco presenta inconvenientes. Los cambios se reflejarán inmediatamente en la sección de facturación y envíos.</span>
+            </div>
+
+            <form onSubmit={handlePaymentSubmit} className="space-y-6">
+              {paySavedMessage && (
+                <div className="p-4 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-bold text-xs rounded-xl flex items-center gap-2 animate-bounce">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>¡Métodos de pago guardados y actualizados con éxito en todo el sistema!</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Pago Movil */}
+                <div className="p-5 bg-slate-800/50 border border-slate-700/60 rounded-2xl space-y-4">
+                  <div className="flex items-center gap-2 border-b border-slate-700 pb-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#20d8e2]/20 flex items-center justify-center text-[#20d8e2]">
+                      <Landmark className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-sm font-black text-white">1. Pago Móvil</h3>
+                  </div>
+
+                  <div className="space-y-3 text-xs">
+                    <div>
+                      <label className="font-bold text-slate-300 block mb-1">Nombre del Titular:</label>
+                      <input
+                        type="text"
+                        required
+                        value={payForm.pagoMovil.titular}
+                        onChange={(e) => setPayForm({
+                          ...payForm,
+                          pagoMovil: { ...payForm.pagoMovil, titular: e.target.value }
+                        })}
+                        className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-light focus:outline-none focus:border-[#20d8e2]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="font-bold text-slate-300 block mb-1">Cédula del Titular:</label>
+                        <input
+                          type="text"
+                          required
+                          value={payForm.pagoMovil.cedula}
+                          onChange={(e) => setPayForm({
+                            ...payForm,
+                            pagoMovil: { ...payForm.pagoMovil, cedula: e.target.value }
+                          })}
+                          className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-light focus:outline-none focus:border-[#20d8e2]"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-bold text-slate-300 block mb-1">Teléfono:</label>
+                        <input
+                          type="text"
+                          required
+                          value={payForm.pagoMovil.phone}
+                          onChange={(e) => setPayForm({
+                            ...payForm,
+                            pagoMovil: { ...payForm.pagoMovil, phone: e.target.value }
+                          })}
+                          className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-light focus:outline-none focus:border-[#20d8e2]"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-300 block mb-1">Banco Receptivo:</label>
+                      <input
+                        type="text"
+                        required
+                        value={payForm.pagoMovil.banco}
+                        onChange={(e) => setPayForm({
+                          ...payForm,
+                          pagoMovil: { ...payForm.pagoMovil, banco: e.target.value }
+                        })}
+                        className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-light focus:outline-none focus:border-[#20d8e2]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Transferencia Bancaria */}
+                <div className="p-5 bg-slate-800/50 border border-slate-700/60 rounded-2xl space-y-4">
+                  <div className="flex items-center gap-2 border-b border-slate-700 pb-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#20d8e2]/20 flex items-center justify-center text-[#20d8e2]">
+                      <Landmark className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-sm font-black text-white">2. Transferencia Bancaria Nacional</h3>
+                  </div>
+
+                  <div className="space-y-3 text-xs">
+                    <div>
+                      <label className="font-bold text-slate-300 block mb-1">Banco Receptor:</label>
+                      <input
+                        type="text"
+                        required
+                        value={payForm.transferencia.banco}
+                        onChange={(e) => setPayForm({
+                          ...payForm,
+                          transferencia: { ...payForm.transferencia, banco: e.target.value }
+                        })}
+                        className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-light focus:outline-none focus:border-[#20d8e2]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-300 block mb-1">Nombre del Titular:</label>
+                      <input
+                        type="text"
+                        required
+                        value={payForm.transferencia.titular}
+                        onChange={(e) => setPayForm({
+                          ...payForm,
+                          transferencia: { ...payForm.transferencia, titular: e.target.value }
+                        })}
+                        className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-light focus:outline-none focus:border-[#20d8e2]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="font-bold text-slate-300 block mb-1">Cédula / RIF Titular:</label>
+                        <input
+                          type="text"
+                          required
+                          value={payForm.transferencia.cedula}
+                          onChange={(e) => setPayForm({
+                            ...payForm,
+                            transferencia: { ...payForm.transferencia, cedula: e.target.value }
+                          })}
+                          className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-light focus:outline-none focus:border-[#20d8e2]"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-bold text-slate-300 block mb-1">Número de Cuenta (20 Dígitos):</label>
+                        <input
+                          type="text"
+                          required
+                          maxLength={20}
+                          value={payForm.transferencia.cuenta}
+                          onChange={(e) => setPayForm({
+                            ...payForm,
+                            transferencia: { ...payForm.transferencia, cuenta: e.target.value }
+                          })}
+                          className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-light focus:outline-none focus:border-[#20d8e2]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Binance */}
+                <div className="p-5 bg-slate-800/50 border border-slate-700/60 rounded-2xl space-y-4 md:col-span-2">
+                  <div className="flex items-center gap-2 border-b border-slate-700 pb-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#20d8e2]/20 flex items-center justify-center text-[#20d8e2]">
+                      <Landmark className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-sm font-black text-white">3. Cuenta Binance (Cripto USDT)</h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <label className="font-bold text-slate-300 block mb-1">Usuario / Correo de Binance:</label>
+                      <input
+                        type="text"
+                        required
+                        value={payForm.binance.usuario}
+                        onChange={(e) => setPayForm({
+                          ...payForm,
+                          binance: { ...payForm.binance, usuario: e.target.value }
+                        })}
+                        className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-light focus:outline-none focus:border-[#20d8e2]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-300 block mb-1">Enlace de Imagen QR de Binance:</label>
+                      <input
+                        type="text"
+                        value={payForm.binance.qrUrl || ''}
+                        onChange={(e) => setPayForm({
+                          ...payForm,
+                          binance: { ...payForm.binance, qrUrl: e.target.value }
+                        })}
+                        placeholder="https://i.postimg.cc/ydTgPJ7P/QRbinance.jpg"
+                        className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-light focus:outline-none focus:border-[#20d8e2]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t border-slate-800">
+                <button
+                  type="submit"
+                  className="px-8 py-3 rounded-xl bg-[#20d8e2] hover:bg-[#1bc6cf] text-slate-950 font-black flex items-center gap-2 cursor-pointer shadow-lg transition-transform active:scale-95"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Guardar Métodos de Pago</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : activeTabMain === 'categories' ? (
           <div className="space-y-6">
             <div className="p-4 bg-[#20d8e2]/10 border border-[#20d8e2]/30 text-[#20d8e2] text-xs font-bold rounded-2xl flex items-center gap-2">
               <FolderTree className="w-4 h-4 shrink-0" />
