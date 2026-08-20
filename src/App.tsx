@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { StoreMode, ActiveTab, Product, CartItem, User, TrackingOrder, PaymentMethodConfig } from './types';
 import { PRODUCTS } from './data/products';
+import { syncCategoriesFromSupabase } from './data/categories';
 import { TopBar } from './components/TopBar';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
@@ -176,10 +177,19 @@ export default function App() {
     }
   }, [paymentMethods]);
 
-  // Load Payment Methods from Supabase on Mount
+  // Load Payment Methods, Categories, Products, and Tracking Orders from Supabase on Mount
   useEffect(() => {
-    async function loadPaymentMethods() {
+    async function loadData() {
       if (!supabase) return;
+      
+      // 1. Load Categories
+      try {
+        await syncCategoriesFromSupabase();
+      } catch (err) {
+        console.error('Error syncing categories:', err);
+      }
+
+      // 2. Load Payment Methods
       try {
         const { data, error } = await supabase
           .from('payment_methods')
@@ -204,8 +214,110 @@ export default function App() {
       } catch (err) {
         console.error('Error loading payment methods from Supabase:', err);
       }
+
+      // 3. Load Products (with Seeding)
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*');
+        
+        if (error) {
+          console.warn('Could not load products from Supabase (ignore if table not created yet):', error.message);
+        } else if (data && data.length > 0) {
+          const mapped: Product[] = data.map((item: any) => ({
+            id: item.id,
+            sku: item.sku || '',
+            title: item.title || '',
+            brand: item.brand || 'Universal',
+            category: item.category || '',
+            description: item.description || '',
+            compatibility: Array.isArray(item.compatibility) ? item.compatibility : (item.compatibility ? JSON.parse(JSON.stringify(item.compatibility)) : []),
+            images: Array.isArray(item.images) ? item.images : (item.images ? JSON.parse(JSON.stringify(item.images)) : []),
+            wholesalePrices: Array.isArray(item.wholesale_prices) ? item.wholesale_prices : (item.wholesale_prices ? JSON.parse(JSON.stringify(item.wholesale_prices)) : []),
+            retailPrice: Number(item.retail_price ?? 0),
+            minWholesaleQty: Number(item.min_wholesale_qty ?? 1),
+            stock: Number(item.stock ?? 0),
+            isPopular: !!item.is_popular,
+            isHighRotation: !!item.is_high_rotation,
+            tags: Array.isArray(item.tags) ? item.tags : (item.tags ? JSON.parse(JSON.stringify(item.tags)) : []),
+          }));
+          setProducts(mapped);
+          localStorage.setItem('viccell_products_db', JSON.stringify(mapped));
+        } else {
+          // Table exists but is empty -> seed default products
+          console.log('Seeding products to Supabase...');
+          for (const prod of PRODUCTS) {
+            await supabase.from('products').insert({
+              id: prod.id,
+              sku: prod.sku,
+              title: prod.title,
+              brand: prod.brand,
+              category: prod.category,
+              description: prod.description,
+              compatibility: prod.compatibility,
+              images: prod.images,
+              wholesale_prices: prod.wholesalePrices,
+              retail_price: prod.retailPrice,
+              min_wholesale_qty: prod.minWholesaleQty,
+              stock: prod.stock,
+              is_popular: prod.isPopular || false,
+              is_high_rotation: prod.isHighRotation || false,
+              tags: prod.tags
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error processing products from Supabase:', err);
+      }
+
+      // 4. Load Tracking Orders (with Seeding)
+      try {
+        const { data, error } = await supabase
+          .from('tracking_orders')
+          .select('*');
+
+        if (error) {
+          console.warn('Could not load tracking orders from Supabase (ignore if table not created yet):', error.message);
+        } else if (data && data.length > 0) {
+          const mapped: TrackingOrder[] = data.map((item: any) => ({
+            id: item.id,
+            code: item.code || '',
+            clientName: item.client_name || '',
+            clientEmail: item.client_email || '',
+            projectName: item.project_name || '',
+            phase: item.phase || 'COTIZADO',
+            createdAt: item.created_at_val || item.created_at?.split('T')[0] || '',
+            updatedAt: item.updated_at_val || item.updated_at?.split('T')[0] || '',
+            itemsDescription: item.items_description || '',
+            totalAmount: Number(item.total_amount ?? 0),
+            notes: item.notes || '',
+            carrier: item.carrier || ''
+          }));
+          setTrackingOrders(mapped);
+          localStorage.setItem('viccell_tracking_orders', JSON.stringify(mapped));
+        } else {
+          // Table exists but is empty -> seed default tracking order
+          const defaultOrder = {
+            id: 'ord-1',
+            code: '20517462',
+            client_name: 'Carlos Mendoza',
+            client_email: 'carlos@ejemplo.com',
+            project_name: 'Importación Lote Pines & Pantallas OLED',
+            phase: 'EN PROCESO',
+            created_at_val: '2026-08-01',
+            updated_at_val: '2026-08-05',
+            items_description: '50x Pines Tipo-C Samsung A12, 20x Módulos OLED iPhone 11',
+            total_amount: 1450.00,
+            notes: 'Mercancía en tránsito aduanal aéreo con guía express.',
+            carrier: 'Zoom'
+          };
+          await supabase.from('tracking_orders').insert(defaultOrder);
+        }
+      } catch (err) {
+        console.error('Error processing tracking orders from Supabase:', err);
+      }
     }
-    loadPaymentMethods();
+    loadData();
   }, []);
 
   const handleUpdatePaymentMethods = async (newMethods: PaymentMethodConfig) => {
@@ -321,37 +433,161 @@ export default function App() {
   };
 
   // Admin Product Actions (CRUD)
-  const handleAddProduct = (newProduct: Omit<Product, 'id'>) => {
+  const handleAddProduct = async (newProduct: Omit<Product, 'id'>) => {
     const created: Product = {
       ...newProduct,
       id: `prod-${Date.now()}`
     };
     setProducts(prev => [created, ...prev]);
+
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('products').insert({
+          id: created.id,
+          sku: created.sku,
+          title: created.title,
+          brand: created.brand,
+          category: created.category,
+          description: created.description,
+          compatibility: created.compatibility,
+          images: created.images,
+          wholesale_prices: created.wholesalePrices,
+          retail_price: created.retailPrice,
+          min_wholesale_qty: created.minWholesaleQty,
+          stock: created.stock,
+          is_popular: created.isPopular || false,
+          is_high_rotation: created.isHighRotation || false,
+          tags: created.tags
+        });
+        if (error) {
+          console.error('Error inserting product in Supabase:', error.message);
+        }
+      } catch (err) {
+        console.error('Error adding product in Supabase:', err);
+      }
+    }
   };
 
-  const handleUpdateProduct = (updatedProduct: Product) => {
+  const handleUpdateProduct = async (updatedProduct: Product) => {
     setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('products').upsert({
+          id: updatedProduct.id,
+          sku: updatedProduct.sku,
+          title: updatedProduct.title,
+          brand: updatedProduct.brand,
+          category: updatedProduct.category,
+          description: updatedProduct.description,
+          compatibility: updatedProduct.compatibility,
+          images: updatedProduct.images,
+          wholesale_prices: updatedProduct.wholesalePrices,
+          retail_price: updatedProduct.retailPrice,
+          min_wholesale_qty: updatedProduct.minWholesaleQty,
+          stock: updatedProduct.stock,
+          is_popular: updatedProduct.isPopular || false,
+          is_high_rotation: updatedProduct.isHighRotation || false,
+          tags: updatedProduct.tags
+        });
+        if (error) {
+          console.error('Error updating product in Supabase:', error.message);
+        }
+      } catch (err) {
+        console.error('Error updating product in Supabase:', err);
+      }
+    }
   };
 
-  const handleDeleteProduct = (productId: string) => {
+  const handleDeleteProduct = async (productId: string) => {
     setProducts(prev => prev.filter(p => p.id !== productId));
+
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('products').delete().eq('id', productId);
+        if (error) {
+          console.error('Error deleting product in Supabase:', error.message);
+        }
+      } catch (err) {
+        console.error('Error deleting product in Supabase:', err);
+      }
+    }
   };
 
   // Tracking Orders CRUD Actions (Admin)
-  const handleAddTrackingOrder = (newOrder: Omit<TrackingOrder, 'id'>) => {
+  const handleAddTrackingOrder = async (newOrder: Omit<TrackingOrder, 'id'>) => {
     const created: TrackingOrder = {
       ...newOrder,
       id: `ord-${Date.now()}`
     };
     setTrackingOrders(prev => [created, ...prev]);
+
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('tracking_orders').insert({
+          id: created.id,
+          code: created.code,
+          client_name: created.clientName,
+          client_email: created.clientEmail,
+          project_name: created.projectName,
+          phase: created.phase,
+          created_at_val: created.createdAt,
+          updated_at_val: created.updatedAt,
+          items_description: created.itemsDescription,
+          total_amount: created.totalAmount,
+          notes: created.notes || '',
+          carrier: created.carrier || ''
+        });
+        if (error) {
+          console.error('Error inserting tracking order in Supabase:', error.message);
+        }
+      } catch (err) {
+        console.error('Error adding tracking order in Supabase:', err);
+      }
+    }
   };
 
-  const handleUpdateTrackingOrder = (updatedOrder: TrackingOrder) => {
+  const handleUpdateTrackingOrder = async (updatedOrder: TrackingOrder) => {
     setTrackingOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('tracking_orders').upsert({
+          id: updatedOrder.id,
+          code: updatedOrder.code,
+          client_name: updatedOrder.clientName,
+          client_email: updatedOrder.clientEmail,
+          project_name: updatedOrder.projectName,
+          phase: updatedOrder.phase,
+          created_at_val: updatedOrder.createdAt,
+          updated_at_val: updatedOrder.updatedAt,
+          items_description: updatedOrder.itemsDescription,
+          total_amount: updatedOrder.totalAmount,
+          notes: updatedOrder.notes || '',
+          carrier: updatedOrder.carrier || ''
+        });
+        if (error) {
+          console.error('Error updating tracking order in Supabase:', error.message);
+        }
+      } catch (err) {
+        console.error('Error updating tracking order in Supabase:', err);
+      }
+    }
   };
 
-  const handleDeleteTrackingOrder = (orderId: string) => {
+  const handleDeleteTrackingOrder = async (orderId: string) => {
     setTrackingOrders(prev => prev.filter(o => o.id !== orderId));
+
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('tracking_orders').delete().eq('id', orderId);
+        if (error) {
+          console.error('Error deleting tracking order in Supabase:', error.message);
+        }
+      } catch (err) {
+        console.error('Error deleting tracking order in Supabase:', err);
+      }
+    }
   };
 
   return (

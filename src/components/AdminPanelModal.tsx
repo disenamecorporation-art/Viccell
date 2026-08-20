@@ -63,6 +63,14 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
   const [newCatName, setNewCatName] = useState('');
   const [newSubName, setNewSubName] = useState<{ [catName: string]: string }>({});
 
+  useEffect(() => {
+    const handleUpdate = () => {
+      setCategoriesList(getStoredCategories());
+    };
+    window.addEventListener('viccell_categories_updated', handleUpdate);
+    return () => window.removeEventListener('viccell_categories_updated', handleUpdate);
+  }, []);
+
   // Payment Methods Admin form state
   const [payForm, setPayForm] = useState<PaymentMethodConfig>(paymentMethods);
   const [paySavedMessage, setPaySavedMessage] = useState(false);

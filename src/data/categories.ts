@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase';
+
 export interface CategoryWithSubs {
   name: string;
   subs: string[];
@@ -46,7 +48,43 @@ export function saveStoredCategories(cats: CategoryWithSubs[]) {
   try {
     localStorage.setItem('viccell_categories', JSON.stringify(cats));
     window.dispatchEvent(new Event('viccell_categories_updated'));
+
+    if (supabase) {
+      supabase.from('categories').upsert({
+        id: 'categories_config',
+        categories_list: cats,
+        updated_at: new Date().toISOString()
+      }).then(({ error }) => {
+        if (error) {
+          console.warn('Error saving categories to Supabase (ignore if table not created yet):', error.message);
+        }
+      });
+    }
   } catch (e) {
     // fallback
   }
 }
+
+export async function syncCategoriesFromSupabase() {
+  if (!supabase) return;
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('id', 'categories_config')
+      .single();
+
+    if (error) {
+      console.warn('Could not load categories from Supabase (ignore if table not created yet):', error.message);
+      return;
+    }
+
+    if (data && data.categories_list) {
+      localStorage.setItem('viccell_categories', JSON.stringify(data.categories_list));
+      window.dispatchEvent(new Event('viccell_categories_updated'));
+    }
+  } catch (err) {
+    console.error('Error in syncCategoriesFromSupabase:', err);
+  }
+}
+
